@@ -1,0 +1,86 @@
+{
+  "stage": "validation",
+  "timestamp_utc": "2026-09-17T17:40:32.742727+00:00",
+  "n_rows": 45593,
+  "gates": [
+    {
+      "gate": "row_count_min",
+      "severity": "FAIL",
+      "status": "PASS",
+      "observed": 45593,
+      "expected": 40000
+    },
+    {
+      "gate": "column_count",
+      "severity": "FAIL",
+      "status": "PASS",
+      "observed": 20,
+      "expected": 20
+    },
+    {
+      "gate": "id_uniqueness",
+      "severity": "FAIL",
+      "status": "PASS",
+      "observed": 0,
+      "expected": 0
+    },
+    {
+      "gate": "target_parse_rate",
+      "severity": "FAIL",
+      "status": "PASS",
+      "observed": 1.0,
+      "expected": 0.995
+    },
+    {
+      "gate": "target_range",
+      "severity": "FAIL",
+      "status": "PASS",
+      "observed": 0.0,
+      "expected": "<=0.05 outside"
+    },
+    {
+      "gate": "date_parse_rate",
+      "severity": "FAIL",
+      "status": "PASS",
+      "observed": 1.0,
+      "expected": 0.999
+    },
+    {
+      "gate": "null_share_numeric",
+      "severity": "WARN",
+      "status": "PASS",
+      "observed": {
+        "worst_col": "rider_rating",
+        "max_share": 0.0418,
+        "per_col": {
+          "rider_age": 0.0407,
+          "rider_rating": 0.0418,
+          "rest_lat": 0.0,
+          "rest_lon": 0.0,
+          "dest_lat": 0.0,
+          "dest_lon": 0.0,
+          "vehicle_condition": 0.0,
+          "multiple_deliveries": 0.0218,
+          "time_taken_min": 0.0
+        }
+      },
+      "expected": "<= 0.3"
+    },
+    {
+      "gate": "duplicate_rows",
+      "severity": "WARN",
+      "status": "PASS",
+      "observed": 0,
+      "expected": 1000
+    },
+    {
+      "gate": "coordinate_sanity",
+      "severity": "WARN",
+      "status": "PASS",
+      "observed": 0.079837,
+      "expected": 0.1
+    }
+  ],
+  "n_fail": 0,
+  "n_warn": 0
+}

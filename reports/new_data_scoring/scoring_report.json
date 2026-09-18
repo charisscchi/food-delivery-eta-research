@@ -1,0 +1,129 @@
+{
+  "run": "score_new_data",
+  "timestamp_utc": "2026-09-17T17:43:12.278116+00:00",
+  "status": "SCORED",
+  "n_batch": 6839,
+  "n_scored": 6409,
+  "batch_summary": {
+    "n_scored": 6409,
+    "n_ok": 6128,
+    "n_fallback": 281,
+    "n_rejected": 430,
+    "share_late_flagged": 0.28335153690123266,
+    "n_batch": 6839
+  },
+  "drift_gate": {
+    "passed": true,
+    "n_fail": 0,
+    "n_warn": 0,
+    "fail_threshold": 0.2,
+    "failing_features": [],
+    "warning_features": [],
+    "table": [
+      {
+        "feature": "rider_hist_median_min",
+        "type": "numeric",
+        "psi": 0.011,
+        "status": "OK"
+      },
+      {
+        "feature": "haversine_km",
+        "type": "numeric",
+        "psi": 0.0085,
+        "status": "OK"
+      },
+      {
+        "feature": "order_hour",
+        "type": "numeric",
+        "psi": 0.004,
+        "status": "OK"
+      },
+      {
+        "feature": "time_taken_min",
+        "type": "numeric",
+        "psi": 0.0019,
+        "status": "OK"
+      },
+      {
+        "feature": "rider_rating",
+        "type": "numeric",
+        "psi": 0.0013,
+        "status": "OK"
+      },
+      {
+        "feature": "weather",
+        "type": "categorical",
+        "psi": 0.0011,
+        "status": "OK"
+      },
+      {
+        "feature": "city",
+        "type": "categorical",
+        "psi": 0.0007,
+        "status": "OK"
+      },
+      {
+        "feature": "type_of_vehicle",
+        "type": "categorical",
+        "psi": 0.0005,
+        "status": "OK"
+      },
+      {
+        "feature": "rider_age",
+        "type": "numeric",
+        "psi": 0.0004,
+        "status": "OK"
+      },
+      {
+        "feature": "type_of_order",
+        "type": "categorical",
+        "psi": 0.0004,
+        "status": "OK"
+      },
+      {
+        "feature": "road_traffic_density",
+        "type": "categorical",
+        "psi": 0.0003,
+        "status": "OK"
+      },
+      {
+        "feature": "pickup_delay_min",
+        "type": "numeric",
+        "psi": 0.0003,
+        "status": "OK"
+      },
+      {
+        "feature": "festival",
+        "type": "categorical",
+        "psi": 0.0002,
+        "status": "OK"
+      },
+      {
+        "feature": "multiple_deliveries",
+        "type": "numeric",
+        "psi": 0.0001,
+        "status": "OK"
+      }
+    ]
+  },
+  "quantile_metrics_vs_actuals": {
+    "pinball": {
+      "q10": 0.598,
+      "q50": 1.577,
+      "q90": 0.648
+    },
+    "p10_p90_coverage": 0.7079,
+    "p50_mae_min": 3.15
+  },
+  "promise_time": {
+    "avg_promise_min": 33.26,
+    "avg_actual_min": 26.37,
+    "broken_promise_rate": 0.0156
+  },
+  "late_risk_vs_actuals": {
+    "test_auc": 0.971,
+    "precision_at_alert_threshold": 0.7792,
+    "n_alerts": 1816,
+    "alert_threshold": 0.3
+  }
+}

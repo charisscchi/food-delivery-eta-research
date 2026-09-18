@@ -1,0 +1,44 @@
+{
+  "pipeline": "delivery-eta-quantile",
+  "started_utc": "2026-09-17T17:40:31.719269+00:00",
+  "stages": {
+    "ingest": {
+      "status": "OK",
+      "elapsed_sec": 1.0,
+      "detail": {
+        "output": "C:\\Users\\sila.shivanandan\\Desktop\\Swiggy\\DS Projects\\delivery-eta-quantile\\data\\interim\\deliveries.parquet"
+      }
+    },
+    "validate": {
+      "status": "OK",
+      "elapsed_sec": 0.1,
+      "detail": {}
+    },
+    "features": {
+      "status": "OK",
+      "elapsed_sec": 0.3,
+      "detail": {
+        "n_train": 31915,
+        "n_test": 6839,
+        "n_new": 6839,
+        "late_threshold_min": 32.0
+      }
+    },
+    "train": {
+      "status": "OK",
+      "elapsed_sec": 82.3,
+      "detail": {
+        "champion": "lightgbm_quantile"
+      }
+    },
+    "evaluate": {
+      "status": "OK",
+      "elapsed_sec": 4.1,
+      "detail": {
+        "champion": "lightgbm_quantile"
+      }
+    }
+  },
+  "status": "SUCCESS",
+  "elapsed_sec": 87.7
+}

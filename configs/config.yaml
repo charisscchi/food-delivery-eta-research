@@ -1,0 +1,96 @@
+# =====================================================================
+# Delivery ETA & Late-Risk Quantile Model — project configuration
+# Single source of truth for every stage. Stages read only from here.
+# (Pattern followed by Swiggy DS repos: config-driven, self-contained.)
+# =====================================================================
+
+project:
+  name: delivery-eta-quantile
+  description: P10/P50/P90 delivery-time quantile model + late-risk classifier
+  random_seed: 42
+
+paths:
+  # All resolved relative to the repo root at runtime.
+  raw_data: data/raw/train.csv
+  interim_data: data/interim/deliveries.parquet
+  processed_dir: data/processed
+  models_dir: models
+  reports_dir: reports
+  mlflow_dir: mlruns
+
+ingestion:
+  # Source of the raw csv (Kaggle mirror; see README data card).
+  source_url: https://raw.githubusercontent.com/SaloniJhalani/Food-Delivery-Time-Prediction-Model/main/data/train.csv
+  expected_rows_min: 40000
+  expected_cols: 20
+
+validation:
+  # Hard gates (FAIL -> pipeline stops) vs soft gates (WARN -> logged).
+  gates:
+    - {gate: row_count_min,       severity: FAIL, value: 40000}
+    - {gate: column_count,        severity: FAIL, value: 20}
+    - {gate: id_uniqueness,       severity: FAIL}
+    - {gate: target_parse_rate,   severity: FAIL, value: 0.995}   # % rows with parseable Time_taken
+    - {gate: target_range,        severity: FAIL, value: [5, 120]}  # minutes
+    - {gate: date_parse_rate,     severity: FAIL, value: 0.999}
+    - {gate: null_share_numeric,  severity: WARN, value: 0.30}     # per numeric col
+    - {gate: duplicate_rows,      severity: WARN, value: 1000}    # exact dupes tolerated, deduped later
+    - {gate: coordinate_sanity,   severity: WARN, value: 0.10}    # % rows with 0/None coords
+
+features:
+  haversine:
+    clip_km: 60            # absurd distances clipped
+  rider_history:
+    min_orders: 5          # riders with < 5 train orders fall back to global median
+  pickup_delay:
+    clip_min: 180           # pickup delay clipped at 3 hours
+  splits:                  # TIME-BASED splits on Order_Date (no random leakage)
+    train_share: 0.70
+    test_share: 0.15
+    new_data_share: 0.15   # held out as a "fresh production batch"
+  late_label:
+    definition: train_p75   # late := Time_taken > 75th percentile of TRAIN target
+
+training:
+  quantiles: [0.10, 0.50, 0.90]
+  cv:
+    folds: 4               # TimeSeriesSplit on ordered Order_Date
+  candidates:
+    # Every candidate is trained per-quantile; champion = lowest mean pinball loss on CV.
+    hist_gbr_quantile:      # sklearn HistGradientBoostingRegressor(loss='quantile')
+      enabled: true
+      params: {max_depth: 6, learning_rate: 0.06, max_iter: 400, min_samples_leaf: 40, l2_regularization: 1.0, early_stopping: true}
+    lightgbm_quantile:     # skipped gracefully if lightgbm unavailable on the runtime
+      enabled: true
+      params: {objective: quantile, learning_rate: 0.05, num_leaves: 63, min_child_samples: 40, n_estimators: 800, colsample_bytree: 0.9, subsample: 0.9, subsample_freq: 1}
+    xgboost_quantile:      # skipped gracefully if xgboost unavailable
+      enabled: true
+      params: {objective: reg:quantileerror, learning_rate: 0.05, max_depth: 6, n_estimators: 600, subsample: 0.9, colsample_bytree: 0.9}
+  late_risk_classifier:
+    lightgbm_binary:
+      params: {objective: binary, learning_rate: 0.05, num_leaves: 63, min_child_samples: 40, n_estimators: 600, colsample_bytree: 0.9, subsample: 0.9, subsample_freq: 1}
+    fallback: hist_gb       # sklearn HistGradientBoostingClassifier
+    threshold_rule:
+      constraint: precision_at_least
+      value: 0.80          # alert precision guarantee, chosen on TRAIN CV predictions
+      max_threshold: 0.95
+
+evaluation:
+  overfitting:
+    pinball_gap_warn: 0.30   # train-vs-test mean pinball difference (minutes)
+    auc_gap_warn: 0.05
+  promise_time:
+    bucket_minutes: 5        # promise = ceil(P90 / 5) * 5  (customer-facing, padded)
+  figures_dir: figures
+
+drift:
+  psi_bins: 10
+  psi_fail: 0.20             # population stability index gate on new-data batch
+  psi_warn: 0.10
+  psi_small_bin_floor: 1e-4  # avoid div-by-zero on empty bins
+  numeric_features: [rider_age, rider_rating, haversine_km, order_hour, pickup_delay_min, multiple_deliveries, rider_hist_median_min, time_taken_min]
+  categorical_features: [weather, road_traffic_density, city, type_of_vehicle, type_of_order, festival]
+
+new_data:
+  # The held-out tail of dates is treated as a "fresh production batch".
+  max_alerts_csv: 50         # alerts.csv committed to repo is capped (reports stay lean)

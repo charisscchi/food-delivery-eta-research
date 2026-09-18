@@ -1,0 +1,15 @@
+feature,type,psi,status
+rider_hist_median_min,numeric,0.011,OK
+haversine_km,numeric,0.0085,OK
+order_hour,numeric,0.004,OK
+time_taken_min,numeric,0.0019,OK
+rider_rating,numeric,0.0013,OK
+weather,categorical,0.0011,OK
+city,categorical,0.0007,OK
+type_of_vehicle,categorical,0.0005,OK
+rider_age,numeric,0.0004,OK
+type_of_order,categorical,0.0004,OK
+road_traffic_density,categorical,0.0003,OK
+pickup_delay_min,numeric,0.0003,OK
+festival,categorical,0.0002,OK
+multiple_deliveries,numeric,0.0001,OK

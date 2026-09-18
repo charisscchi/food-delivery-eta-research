@@ -1,0 +1,25 @@
+# Core
+pandas>=2.2
+numpy>=2.0
+scipy>=1.14
+scikit-learn>=1.6
+
+# Models
+xgboost>=2.1
+lightgbm>=4.5
+
+# Tracking & experiment management
+mlflow>=2.17
+joblib>=1.4
+
+# Data / io / viz
+pyarrow>=17.0
+PyYAML>=6.0.2
+matplotlib>=3.9
+tqdm>=4.66
+
+# Testing
+pytest>=8.2
+
+# Notebook (VSCode Jupyter extension runs on the venv's kernel)
+ipykernel>=6.29

@@ -1,0 +1,194 @@
+{
+  "stage": "evaluation",
+  "champion": "lightgbm_quantile",
+  "quantiles": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "pinball_test": {
+    "q10": 0.607,
+    "q50": 1.588,
+    "q90": 0.665
+  },
+  "pinball_train": {
+    "q10": 0.483,
+    "q50": 1.186,
+    "q90": 0.495
+  },
+  "overfit_gap_min": {
+    "q10": -0.124,
+    "q50": -0.402,
+    "q90": -0.17
+  },
+  "pinball_gap_threshold": 0.3,
+  "p10_p90_coverage": 0.7036,
+  "quantile_crossing_share": 0.0053,
+  "p50_mae_min": 3.18,
+  "promise_time": {
+    "bucket_minutes": 5,
+    "avg_promise_min": 33.35,
+    "avg_actual_min": 26.48,
+    "broken_promise_rate": 0.0168,
+    "padding_min": 6.87
+  },
+  "late_risk": {
+    "alert_threshold": 0.3,
+    "test_auc": 0.9737,
+    "test_precision_at_threshold": 0.7989,
+    "test_recall_at_threshold": 0.9011,
+    "n_flagged_test": 1974,
+    "train_auc": 0.9996
+  },
+  "decile_calibration": [
+    {
+      "decile": 1,
+      "n": 684,
+      "mean_score": 1.5596168264892082e-05,
+      "actual_late_rate": 0.0
+    },
+    {
+      "decile": 2,
+      "n": 684,
+      "mean_score": 0.00010338133617589344,
+      "actual_late_rate": 0.0
+    },
+    {
+      "decile": 3,
+      "n": 684,
+      "mean_score": 0.0003525061149218601,
+      "actual_late_rate": 0.0
+    },
+    {
+      "decile": 4,
+      "n": 684,
+      "mean_score": 0.001030850838736795,
+      "actual_late_rate": 0.0
+    },
+    {
+      "decile": 5,
+      "n": 684,
+      "mean_score": 0.002940592708342839,
+      "actual_late_rate": 0.0014619883040935672
+    },
+    {
+      "decile": 6,
+      "n": 683,
+      "mean_score": 0.02017768222267179,
+      "actual_late_rate": 0.05417276720351391
+    },
+    {
+      "decile": 7,
+      "n": 684,
+      "mean_score": 0.12209640695182561,
+      "actual_late_rate": 0.16666666666666666
+    },
+    {
+      "decile": 8,
+      "n": 684,
+      "mean_score": 0.5379319433226979,
+      "actual_late_rate": 0.5190058479532164
+    },
+    {
+      "decile": 9,
+      "n": 684,
+      "mean_score": 0.8942247962905693,
+      "actual_late_rate": 0.8289473684210527
+    },
+    {
+      "decile": 10,
+      "n": 684,
+      "mean_score": 0.9920593597973559,
+      "actual_late_rate": 0.9883040935672515
+    }
+  ],
+  "slice_aucs": {
+    "weather": {
+      "Cloudy": 0.967,
+      "Fog": 0.976,
+      "Sandstorms": 0.966,
+      "Stormy": 0.97,
+      "Sunny": 0.987,
+      "Windy": 0.974,
+      "unknown": 0.737
+    },
+    "road_traffic_density": {
+      "High": 0.934,
+      "Jam": 0.966,
+      "Low": 0.993,
+      "Medium": 0.958,
+      "unknown": 0.737
+    },
+    "city": {
+      "Metropolitian": 0.97,
+      "Urban": 0.981,
+      "unknown": 0.969
+    }
+  },
+  "feature_importance_top": [
+    {
+      "feature": "haversine_km",
+      "importance": 6732
+    },
+    {
+      "feature": "rider_age",
+      "importance": 5307
+    },
+    {
+      "feature": "rider_hist_median_min",
+      "importance": 4788
+    },
+    {
+      "feature": "rider_rating",
+      "importance": 3897
+    },
+    {
+      "feature": "order_hour",
+      "importance": 2807
+    },
+    {
+      "feature": "lat_diff",
+      "importance": 2773
+    },
+    {
+      "feature": "lon_diff",
+      "importance": 2313
+    },
+    {
+      "feature": "vehicle_condition",
+      "importance": 1896
+    },
+    {
+      "feature": "pickup_delay_min",
+      "importance": 1738
+    },
+    {
+      "feature": "multiple_deliveries",
+      "importance": 1269
+    },
+    {
+      "feature": "weather_Fog",
+      "importance": 735
+    },
+    {
+      "feature": "type_of_vehicle_motorcycle",
+      "importance": 725
+    },
+    {
+      "feature": "weather_Cloudy",
+      "importance": 721
+    },
+    {
+      "feature": "road_traffic_density_Jam",
+      "importance": 591
+    },
+    {
+      "feature": "weather_Sunny",
+      "importance": 578
+    }
+  ],
+  "overfitting_flags": {
+    "pinball_gap_exceeds": false,
+    "auc_gap_exceeds": false
+  }
+}
