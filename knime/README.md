@@ -104,8 +104,7 @@ For the second CSV Reader, browse to:
 
 `data/knime_demo/knime_test.csv`
 
-Both paths are relative to the cloned GitHub
-repository's root directory.
+The paths above show where the generated CSV files are located within the repository. Use each CSV Reader's file picker to select the corresponding file on your computer.
 
 ### 4. Execute the workflow
 

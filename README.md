@@ -173,7 +173,7 @@ Evaluated prediction interval coverage, MAE, and average interval width across w
 
 Applied a calibration adjustment to existing quantile predictions.
 
-The original test split was used for calibration, while the later `new_data` split was used for evaluation.
+The original test split was used for calibration, while the separate `new_data` split was used for evaluation.
 
 ### Experiment 3: Feature Ablation
 
