@@ -1,0 +1,13 @@
+category,group,orders,mae_min,avg_width_min,coverage_pct
+weather,Cloudy,1135,2.85,7.7,70.4
+weather,Fog,1103,2.76,7.82,72.98
+weather,Sandstorms,1144,3.3,9.24,69.41
+weather,Stormy,1124,3.43,9.28,68.42
+weather,Sunny,1135,3.14,8.44,69.16
+weather,Windy,1109,3.36,9.41,71.42
+weather,unknown,89,5.93,17.88,76.4
+road_traffic_density,High,643,3.32,9.29,72.32
+road_traffic_density,Jam,2213,3.55,9.92,71.26
+road_traffic_density,Low,2300,2.72,7.26,67.57
+road_traffic_density,Medium,1594,3.11,8.64,72.02
+road_traffic_density,unknown,89,5.93,17.88,76.4

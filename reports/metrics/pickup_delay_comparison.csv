@@ -1,0 +1,3 @@
+model,mae_min,coverage_pct,avg_width_min
+Original,3.18,70.36,8.77
+Without pickup delay,3.19,70.11,8.68

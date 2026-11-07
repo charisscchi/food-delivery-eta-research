@@ -1,0 +1,14 @@
+category,group,orders,baseline_coverage_pct,calibrated_coverage_pct,baseline_width_min,calibrated_width_min
+overall,All,6839,70.7,80.39,8.79,10.04
+weather,Cloudy,1102,68.6,81.03,7.6,8.85
+weather,Fog,1194,69.43,78.64,7.79,9.04
+weather,Sandstorms,1133,71.58,80.85,9.28,10.53
+weather,Stormy,1119,72.48,81.59,9.27,10.52
+weather,Sunny,1054,70.59,81.02,8.6,9.85
+weather,Windy,1150,70.96,79.3,9.47,10.72
+weather,unknown,87,78.16,81.61,18.11,19.36
+road_traffic_density,High,656,69.51,78.96,9.44,10.69
+road_traffic_density,Jam,2116,71.83,80.06,10.0,11.25
+road_traffic_density,Low,2294,68.48,80.21,7.24,8.49
+road_traffic_density,Medium,1686,72.36,81.55,8.64,9.89
+road_traffic_density,unknown,87,78.16,81.61,18.11,19.36

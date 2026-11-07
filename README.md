@@ -1,177 +1,301 @@
-# Food Delivery ETA & Late-Risk — Quantile ML Pipeline
 
-**P10 / P50 / P90 delivery-time forecasts + a late-risk alerting model, engineered the way production DS teams build it: config-driven stages, gate-based data validation, leak-safe feature engineering, candidate racing under time-series CV, MLflow experiment tracking, a model contract with deterministic fallbacks, and drift-gated scoring on a held-out "fresh production batch".**
+# Can We Trust Food Delivery ETAs?
+### Investigating Prediction Reliability, Uncertainty Calibration, and Feature Selection
 
-- **Problem**: "How long will this order take?" is not a point estimate — customers need a promise (P90), ops need risk flags, and riders get judged on the median. This project predicts the **whole distribution** of delivery time.
-- **Data**: 45,593 real food-delivery orders (rider attributes, restaurant→drop geo, weather, traffic, vehicle, festival, city) — open Kaggle-origin dataset, see [Data card](#data-card).
-- **Runs 100% locally** in VSCode — no cloud, no GPU, no API keys.
+Food delivery apps provide estimated arrival times, but how reliable are these predictions under different weather and traffic conditions? Can machine learning provide more trustworthy delivery-time estimates by accounting for uncertainty?
 
----
+This project investigates the reliability of food delivery ETA prediction intervals using LightGBM quantile regression. It examines how performance varies across real-world conditions, evaluates conformal calibration, and studies the effects of removing potentially problematic features.
 
-## Why this project (the Swiggy angle)
+The goal is not only to predict delivery times accurately, but also to understand **how confidently those predictions should be communicated**.
 
-This mirrors how Swiggy's DS org actually ships models (structure borrowed from their `ds_time_prediction`-style repos):
+## Research Questions
 
-| Swiggy DS practice | Where it lives here |
+1. How reliable are food delivery ETA prediction intervals across different weather and traffic conditions?
+2. Can conformal calibration improve prediction interval coverage without making intervals excessively wide?
+3. How does removing potentially unavailable or leakage-prone features affect predictive performance?
+
+## Key Findings
+
+### 1. Baseline Prediction Intervals Were Under-Covered
+
+The original LightGBM quantile regression pipeline achieved the following results on the initial test split:
+
+| Metric | Result |
+|---|---:|
+| P50 Mean Absolute Error (MAE) | 3.18 min |
+| P10–P90 Prediction Interval Coverage | 70.36% |
+| Intended Interval Coverage | 80% |
+
+A P10–P90 prediction interval is intended to contain approximately 80% of observed delivery times when properly calibrated.
+
+However, the model achieved only **70.36% coverage**, suggesting that its prediction intervals were too narrow or otherwise insufficiently calibrated.
+
+This motivated further analysis of prediction reliability.
+
+### 2. Reliability Varied Across Weather and Traffic Conditions
+
+To investigate whether prediction reliability differed across conditions, I evaluated interval coverage, prediction error, and average interval width for different weather and traffic groups.
+
+Selected findings from the initial test split:
+
+| Condition | Coverage | MAE | Average Interval Width |
+|---|---:|---:|---:|
+| Cloudy | 70.40% | 2.85 min | 7.70 min |
+| Fog | 72.98% | 2.76 min | 7.82 min |
+| Sandstorms | 69.41% | 3.30 min | 9.24 min |
+| Stormy | 68.42% | 3.43 min | 9.28 min |
+| Sunny | 69.16% | 3.14 min | 8.44 min |
+| Low Traffic | 67.57% | 2.72 min | 7.26 min |
+| Traffic Jam | 71.26% | 3.55 min | 9.92 min |
+
+**Key observation:** Low-traffic deliveries had the lowest average prediction error but also the lowest interval coverage among the reported traffic groups.
+
+This highlights an important distinction: **accurate point predictions do not necessarily imply reliable uncertainty estimates**.
+
+These results describe observed associations rather than causal effects of weather or traffic.
+
+### 3. Conformal Calibration Improved Prediction Interval Coverage
+
+To address under-coverage, I implemented conformalized quantile regression using a separate calibration split.
+
+The method adjusts the original P10–P90 prediction interval boundaries based on errors observed in calibration data.
+
+The calibrated model was then evaluated on a later dataset containing **6,839 orders**.
+
+| Metric | Original | Calibrated |
+|---|---:|---:|
+| Prediction Interval Coverage | 70.70% | **80.39%** |
+| Average Interval Width | 8.79 min | 10.04 min |
+| Intended Coverage | 80% | 80% |
+
+The conformal adjustment was approximately **0.62 minutes per side**.
+
+**Results:**
+- Coverage increased by **9.69 percentage points**.
+- Average interval width increased by **1.25 minutes**.
+- Calibrated coverage was close to the intended 80% level.
+
+The improvement demonstrates the tradeoff between prediction reliability and interval width.
+
+Wider intervals can provide better coverage, but they may also give customers less precise arrival-time information.
+
+### 4. Feature Ablation Revealed Small Performance Differences
+
+I also investigated whether removing two potentially problematic features affected prediction performance:
+
+- `pickup_delay_min`: May be unavailable when a customer initially places an order.
+- `rider_hist_median_min`: The original training implementation may incorporate information from the same or later delivery outcomes when constructing rider history.
+
+Three model configurations were evaluated on the initial test split:
+
+| Model | Features | MAE | Coverage | Average Width |
+|---|---:|---:|---:|---:|
+| Original LightGBM | 69 | 3.18 min | 70.36% | 8.77 min |
+| Without Pickup Delay | 68 | 3.19 min | 70.11% | 8.68 min |
+| Without Pickup Delay and Rider History | 67 | **3.16 min** | **70.67%** | 8.79 min |
+
+Removing both features resulted in a slightly lower MAE and slightly higher interval coverage.
+
+However, these differences were small and were not tested for statistical significance.
+
+The findings suggest that removing these features may be possible without substantially reducing performance on this dataset.
+
+This experiment does not establish that all remaining features are available at order placement or that the model is entirely free from data leakage.
+
+## Visual Results
+
+### Overall Coverage: Before vs. After Calibration
+
+![ETA Coverage Comparison](reports/figures/eta_coverage_comparison.png)
+
+The calibrated model achieved coverage closer to the intended 80% level on the later evaluation split.
+
+### Coverage Across Weather and Traffic Conditions
+
+![ETA Coverage by Condition](reports/figures/eta_coverage_by_condition.png)
+
+Calibration improved observed coverage across the evaluated weather and traffic groups, although results still varied by condition.
+
+## Methodology
+
+The research extends an existing food delivery ETA machine-learning pipeline.
+
+### Baseline Model
+
+- LightGBM quantile regression
+- P10, P50, and P90 delivery-time predictions
+- Structured delivery-order data
+- Evaluation using mean absolute error, quantile coverage, and interval width
+
+### Experiment 1: Conditional Reliability Analysis
+
+Evaluated prediction interval coverage, MAE, and average interval width across weather and traffic categories.
+
+### Experiment 2: Conformal Calibration
+
+Applied a calibration adjustment to existing quantile predictions.
+
+The original test split was used for calibration, while the later `new_data` split was used for evaluation.
+
+### Experiment 3: Feature Ablation
+
+Trained additional LightGBM quantile models after removing selected features and compared their performance with the original model.
+
+### Experiment 4: Research Visualization
+
+Created visual comparisons illustrating overall calibration performance and differences across weather and traffic conditions.
+
+## My Contributions
+
+This fork adds independent research experiments and analysis beyond the original implementation.
+
+**New contributions include:**
+
+- Weather- and traffic-specific prediction interval analysis
+- Conformal calibration of delivery-time intervals
+- Model comparisons with selected features removed
+- Evaluation of coverage and interval-width tradeoffs
+- Research visualizations
+- Interpretation of results and methodological limitations
+- A pandas compatibility fix in feature engineering
+
+### Research Scripts
+
+| File | Purpose |
 |---|---|
-| Config-driven stages (`config.yaml` is the single source of truth) | `configs/config.yaml` |
-| Data-quality **gates** (FAIL stops the pipeline, WARN reports) | `src/validation/validate.py` |
-| Time-based splits + target-encoded rider history **fit on train only** (no leakage) | `src/features/build_features.py` |
-| Candidate racing: 3 engines × 3 quantiles, champion by CV pinball loss | `src/training/train.py` |
-| MLflow experiment tracking (Swiggy literally maintains an MLflow fork) | `mlruns/mlflow.db` |
-| **Model contract**: required inputs, valid ranges, fallback rules — DS owns the contract | `src/inference/model_contract.py` |
-| PSI drift gate before scoring a fresh batch | `src/evaluation/drift.py`, `scripts/score_new_data.py` |
-| Batch scoring + ops alerts (like their daily `run_daily.py` pattern) | `scripts/score_new_data.py` → `reports/new_data_scoring/alerts.csv` |
+| `scripts/analyze_interval_coverage.py` | Analyze coverage, MAE, and interval width by condition |
+| `scripts/calibrate_eta_intervals.py` | Implement and evaluate conformal calibration |
+| `scripts/compare_pickup_delay.py` | Compare models with and without pickup-delay information |
+| `scripts/compare_rider_history.py` | Evaluate removing pickup-delay and rider-history features |
+| `scripts/plot_research_results.py` | Generate research visualizations |
 
-## Architecture
+### Research Outputs
 
-```
-data/raw/train.csv
-      │
-      ▼
-┌─────────────────┐   ┌──────────────────┐   ┌──────────────────────────┐
-│ 1. INGEST       │──▶│ 2. VALIDATE     │──▶│ 3. FEATURES              │
-│ parse & type,   │   │ 9 quality gates │   │ geo (haversine), temporal│
-│ strip prefixes, │   │ FAIL/WARN       │   │ rider history (train-only│
-│ NaN sentinels   │   │                 │   │ target encoding), splits │
-└─────────────────┘   └──────────────────┘   │ 70/15/15 by Order_Date   │
-                                             └───────────┬──────────────┘
-                                                         ▼
-┌──────────────────────────────┐   ┌───────────────────────────────────┐
-│ 5. EVALUATE                  │◀──│ 4. TRAIN                          │
-│ pinball (train vs test),     │   │ 3 candidates × 3 quantiles        │
-│ 80% interval coverage,       │   │ 4-fold TimeSeriesSplit CV         │
-│ calibration, per-slice AUC,  │   │ champion = lowest CV pinball       │
-│ promise-time quality, figs   │   │ + late-risk classifier (P80 alert │
-└──────────────┬───────────────┘   │ precision rule) — all in MLflow   │
-               │                   └───────────────────────────────────┘
-               ▼
-┌────────────────────────────────────────────────────────────────────┐
-│ 6. SCORE NEW DATA (production simulation)                          │
-│ PSI drift gate → model contract (fallbacks/rejects) → quantile     │
-│ scores + promise + late-risk → honest metrics vs delayed ground     │
-│ truth → ops alerts csv                                            │
-└────────────────────────────────────────────────────────────────────┘
+| File | Description |
+|---|---|
+| `reports/metrics/weather_traffic_analysis.csv` | Weather- and traffic-specific reliability results |
+| `reports/metrics/calibration_comparison.csv` | Original versus calibrated interval performance |
+| `reports/metrics/pickup_delay_comparison.csv` | Pickup-delay feature ablation |
+| `reports/metrics/feature_ablation_results.csv` | Three-model feature ablation comparison |
+| `reports/research/RESEARCH_SUMMARY.md` | Research questions, methodology, results, and conclusions |
+
+## How to Reproduce
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/charisscchi/food-delivery-eta-research.git
+cd food-delivery-eta-research
 ```
 
-## Quickstart (VSCode, local)
+### 2. Set Up the Python Environment
 
-```powershell
-# 1. create the environment
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+Python 3.12 is recommended for this project.
 
-# 2. fetch the raw data (idempotent) — or place Kaggle's train.csv at data/raw/
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+On macOS, LightGBM may also require the OpenMP library:
+
+```bash
+brew install libomp
+```
+
+### 3. Download and Prepare the Dataset
+
+```bash
 python scripts/fetch_data.py
 
-# 3. run the full pipeline (ingest → validate → features → train → evaluate)
-python scripts/run_pipeline.py
-#    partial: python scripts/run_pipeline.py --stages ingest,validate
+python scripts/run_pipeline.py --stages ingest,validate,features
+```
 
-# 4. score the held-out "fresh production batch" (drift gate + contract + alerts)
-python scripts/score_new_data.py
+The dataset is downloaded by the original project's data retrieval script.
 
-# 5. tests
+### 4. Train and Evaluate the Original Model
+
+```bash
+python scripts/run_pipeline.py --stages train,evaluate
+```
+
+This generates the baseline model artifacts and evaluation results needed for the research experiments.
+
+### 5. Run the Research Experiments
+
+```bash
+python scripts/analyze_interval_coverage.py
+
+python scripts/calibrate_eta_intervals.py
+
+python scripts/compare_pickup_delay.py
+
+python scripts/compare_rider_history.py
+
+python scripts/plot_research_results.py
+```
+
+Generated CSV results and visualizations are saved in the `reports/` directory.
+
+### 6. Run the Tests
+
+```bash
 python -m pytest tests/ -q
-
-# 6. explore
-#    notebooks/01_eda.ipynb  (run after stages ingest,validate)
-#    mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 ```
 
-## Results
+The original project's test suite passed all 18 tests in the development environment used for this research.
 
-All numbers below are from the committed run artifacts in `reports/` (champion: **lightgbm_quantile**, selected by 4-fold time-series CV over HistGBR and XGBoost — full candidate race in `models/champion/training_report.json`, every run logged to MLflow).
+## Limitations
 
-### Quantile head
+Several limitations should be considered when interpreting these results:
 
-| Metric | Test | New-data batch |
-|---|---|---|
-| Pinball loss P10 / P50 / P90 (min) | 0.61 / 1.59 / 0.67 | 0.60 / 1.58 / 0.65 |
-| P50 MAE (minutes) | **3.18** | **3.15** |
-| P10–P90 interval coverage (nominal 80%) | 70.4% | 70.8% |
-| Quantile crossing violations | 0.53% | — |
-| Broken-promise rate (actual > padded P90 promise) | **1.7%** | **1.6%** |
-| Avg promise vs avg actual (padding) | 33.4 vs 26.5 min (+6.9) | 33.3 vs 26.4 min |
+1. **Dataset scope:** The experiments rely on a single food delivery dataset. Results may not generalize to other delivery platforms, cities, or time periods.
 
-### Late-risk classifier (is_late := time > train-P75 = 32 min)
+2. **Calibration assumptions:** Conformal prediction relies on assumptions about the relationship between calibration and evaluation data. Distribution shifts may reduce coverage reliability.
 
-| Metric | Train (OOF) | Test | New-data batch |
-|---|---|---|---|
-| ROC-AUC | 0.801 | 0.974 | 0.971 |
-| Precision @ alert threshold | 0.802 | 0.799 | 0.779 |
-| Recall @ alert threshold | 0.698 | 0.901 | — |
+3. **Coverage versus precision:** Improved coverage required wider prediction intervals. Higher coverage alone does not necessarily produce more useful customer-facing estimates.
 
-Alert threshold 0.30, chosen on train out-of-fold predictions as the smallest threshold holding precision ≥ 0.80 (the ops guarantee: ≤ 1 in 5 alerts is a false alarm).
+4. **Feature availability:** Some features may not be available when a customer initially places an order. Further auditing is necessary to establish a valid prediction-time feature set.
 
-### Candidate race (CV mean pinball, minutes — lower wins)
+5. **Potential data leakage:** The original feature-engineering and evaluation pipeline may contain leakage risks. Removing two selected features does not guarantee that all leakage has been eliminated.
 
-| Candidate | P10 | P50 | P90 | Mean |
-|---|---|---|---|---|
-| lightgbm_quantile **(champion)** | 0.658 | 1.605 | 0.714 | **0.992** |
-| xgboost_quantile | 0.652 | 1.621 | 0.718 | 0.997 |
-| hist_gbr_quantile | 0.664 | 1.635 | 0.719 | 1.006 |
+6. **Exploratory evaluation:** Several experiments used an already-examined test split. The later evaluation data also originates from the original project's dataset. Results should therefore not be interpreted as completely independent deployment validation.
 
-### Drift gate on the new-data batch
+7. **Statistical uncertainty:** Small differences between feature ablation models were not evaluated for statistical significance.
 
-All 14 monitored features stable — max PSI 0.011 (`rider_hist_median_min`), gate threshold 0.20. Full table in `reports/new_data_scoring/drift_table.csv`.
+8. **Target definition:** The precise definition of delivery time and the timing of available input information require further verification before interpreting this system as a real-time, order-placement ETA predictor.
 
-### What the model learned (top features)
+## Future Work
 
-`haversine_km` > `rider_age` > `rider_hist_median_min` (train-only target encoding) > `rider_rating` > `order_hour` — geo and rider history dominate, exactly what a delivery-time model should lean on. Per-slice AUCs are stable across weather/traffic/city (0.93–0.99); the weakest slice is `weather=unknown` (AUC 0.74, ~1% of orders) — see `reports/metrics/model_metrics.json`.
+Potential extensions include:
 
-### Calibration (deciles, test set)
+- Auditing all features for availability at prediction time
+- Evaluating conformal calibration on the reduced-feature model
+- Implementing leakage-safe, time-aware rider-history features
+- Testing models across additional datasets and time periods
+- Investigating condition-specific or adaptive prediction intervals
+- Comparing interval coverage and width using additional evaluation methods
+- Developing an interactive interface to visualize delivery-time uncertainty
 
-Bottom-4 deciles: 0% actual late rate. Decile 8: 52% predicted vs 52% actual. Decile 10: 99% predicted vs 99% actual. Monotone and tight — the late-risk score is directly usable as an ops priority queue.
+## Conclusion
 
-## Repo structure
+This research investigated the reliability of machine-learning food delivery ETA predictions, focusing on prediction intervals rather than point estimates alone.
 
-```
-delivery-eta-quantile/
-├── configs/config.yaml          # every knob: gates, candidates, splits, drift, contract
-├── data/                        # raw/ interim/ processed/ (gitignored, regenerated)
-├── models/champion/             # quantile_bundle.joblib + training_report.json (gitignored)
-├── mlruns/                      # MLflow sqlite store (gitignored)
-├── notebooks/01_eda.ipynb       # structural EDA on the interim parquet
-├── reports/                     # COMMITTED: quality report, metrics, figures, alerts
-│   ├── data_quality/ingestion_quality_report.json
-│   ├── metrics/model_metrics.json
-│   ├── figures/*.png
-│   ├── new_data_scoring/{predictions.parquet, alerts.csv, scoring_report.json, drift_table.csv}
-│   └── run_summary.json
-├── scripts/
-│   ├── fetch_data.py            # idempotent downloader
-│   ├── run_pipeline.py          # stage orchestrator (--stages subset)
-│   └── score_new_data.py        # production simulation: drift → contract → score → alerts
-├── src/
-│   ├── config.py, constants.py
-│   ├── ingestion/ingest.py      # prefix strip, NaN sentinel, typing
-│   ├── validation/validate.py   # 9 gates, FAIL/WARN severities
-│   ├── features/build_features.py  # geo/temporal/rider features + time splits
-│   ├── training/train.py        # candidate race + champion + late-risk + MLflow
-│   ├── evaluation/evaluate.py    # pinball, coverage, calibration, slices, figures
-│   ├── evaluation/drift.py      # PSI numeric + categorical + gate
-│   └── inference/model_contract.py  # contract + single scoring path
-└── tests/                       # 18 tests: ingest, features/leakage, drift, contract, threshold
-```
+The baseline LightGBM model exhibited under-coverage, and prediction reliability varied across weather and traffic conditions.
 
-## Model card
+Conformal calibration improved observed interval coverage from **70.70% to 80.39%** on the later evaluation split, with an increase in average interval width of **1.25 minutes**.
 
-- **Inputs** (contract-enforced): rider id/age/rating, restaurant & drop lat/lon, order date + times, weather, traffic density, vehicle condition/type, order type, multiple deliveries, festival, city.
-- **Outputs**: `p10_min`, `p50_min`, `p90_min` (monotonicity-repaired), `promise_min` (padded, bucketed P90), `late_risk` (P(time > train-P75)), `late_flag`.
-- **Fallbacks**: out-of-range numerics → in-range median + FALLBACK status; unknown categoricals → `'unknown'`; missing critical fields (coords, rider id, date) → REJECTED row, never a crash.
-- **Retrain trigger**: PSI drift gate on new batches (any feature > 0.20 blocks scoring and surfaces the report).
-- **Known limits**: single-city-family dataset; no live traffic feed; rider history is a median (not EWMA); promise bucketing is a business knob.
+Feature ablation experiments also showed that removing two potentially problematic features produced only small changes in prediction performance.
 
-## Data card
+Overall, the findings highlight the importance of evaluating **predictive accuracy, uncertainty calibration, and feature validity** when developing practical machine-learning systems.
 
-- **Source**: Kaggle "Food Delivery Time Prediction" train set (45,593 orders × 20 cols), fetched from a public GitHub mirror listed in `configs/config.yaml`.
-- **License**: dataset used for learning/portfolio purposes; code is MIT (see LICENSE).
+## Acknowledgments and Attribution
 
-## What I'd build next
+This research builds upon [SilaShiva/delivery-eta-quantile](https://github.com/SilaShiva/delivery-eta-quantile), which provides the original data-processing, model-training, and evaluation pipelines.
 
-1. Hyperparameter search per quantile (optuna) instead of fixed candidate grids.
-2. Calibration of P90 via conformal prediction (coverage guarantee without distribution assumptions).
-3. Rider-history as EWMA with recency decay, and a "new rider" segment feature.
-4. SHAP-based per-slice error explanation for the ops report.
+My independent extensions focus on prediction interval reliability, conformal calibration, feature ablation, research visualizations, and interpretation of findings.
+
+The original MIT license and copyright attribution are retained.

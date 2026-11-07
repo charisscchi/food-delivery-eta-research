@@ -1,0 +1,4 @@
+model,mae_min,coverage_pct,avg_width_min
+Original,3.18,70.36,8.77
+Without pickup delay,3.19,70.11,8.68
+Without pickup delay and rider history,3.16,70.67,8.79

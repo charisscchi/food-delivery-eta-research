@@ -81,7 +81,7 @@ def build_core_features(df: pd.DataFrame, cfg: dict | None = None) -> pd.DataFra
 
     df["order_hour"] = ordered_h.fillna(df["order_hour"] if "order_hour" in df else 12.0)
     df["day_of_week"] = df["order_date"].dt.day_name()
-    df["is_weekend"] = df["order_date"].dt.dayofweek.isin([5, 6]).astype(int)
+    df["is_weekend"] = df["order_date"].dt.day_of_week.isin([5, 6]).astype(int)
 
     # lunch (11-14) and dinner (18-22) demand peaks
     df["is_lunch_peak"] = df["order_hour"].between(11, 14).astype(int)
