@@ -60,7 +60,7 @@ To address under-coverage, I implemented conformalized quantile regression using
 
 The method adjusts the original P10–P90 prediction interval boundaries based on errors observed in calibration data.
 
-The calibrated model was then evaluated on a later dataset containing **6,839 orders**.
+The calibrated model was evaluated on a separate evaluation split (`new_data`) containing **6,839 orders**.
 
 | Metric | Original | Calibrated |
 |---|---:|---:|
@@ -101,6 +101,44 @@ However, these differences were small and were not tested for statistical signif
 The findings suggest that removing these features may be possible without substantially reducing performance on this dataset.
 
 This experiment does not establish that all remaining features are available at order placement or that the model is entirely free from data leakage.
+
+## KNIME Visual Machine Learning Extension
+
+To complement my Python-based ETA reliability research, I developed a beginner-friendly machine-learning workflow using KNIME Analytics Platform.
+
+The workflow demonstrates how to train and evaluate a regression model through visual programming without writing Python modeling code.
+
+### Workflow Overview
+
+![Food Delivery ETA KNIME Workflow](knime/workflow_overview.png)
+
+The workflow includes:
+1. CSV Reader — Load training data
+2. Simple Regression Tree Learner — Train a regression model
+3. CSV Reader — Load held-out test data
+4. Simple Regression Tree Predictor — Predict delivery times
+5. Numeric Scorer — Evaluate model performance
+
+### KNIME Regression Results
+
+The model was evaluated on 6,839 test orders using eight input features.
+
+| Metric | Result |
+|---|---:|
+| Mean Absolute Error (MAE) | 6.314 min |
+| Root Mean Squared Error (RMSE) | 7.982 min |
+| R-squared | 0.306 |
+| Adjusted R-squared | 0.305 |
+
+This experiment provides a simple, interpretable educational baseline.
+
+The KNIME model uses fewer features and a different algorithm than the Python LightGBM model, so their results should not be interpreted as a controlled performance comparison.
+
+### KNIME Certification
+
+I earned the [KNIME L1: Basic Proficiency in KNIME Analytics Platform](https://www.credly.com/badges/47c2adbd-d3eb-40a8-9402-c41d824fe37f) certification in November 2026.
+
+**[View the KNIME workflow, documentation, and reproduction instructions](knime/README.md)**
 
 ## Visual Results
 
@@ -158,6 +196,7 @@ This fork adds independent research experiments and analysis beyond the original
 - Research visualizations
 - Interpretation of results and methodological limitations
 - A pandas compatibility fix in feature engineering
+- A beginner-friendly KNIME visual machine-learning workflow with regression modeling, evaluation, and step-by-step technical documentation
 
 ### Research Scripts
 
@@ -168,6 +207,7 @@ This fork adds independent research experiments and analysis beyond the original
 | `scripts/compare_pickup_delay.py` | Compare models with and without pickup-delay information |
 | `scripts/compare_rider_history.py` | Evaluate removing pickup-delay and rider-history features |
 | `scripts/plot_research_results.py` | Generate research visualizations |
+| `scripts/prepare_knime_data.py` | Generate training and test CSV datasets for the KNIME visual ML workflow |
 
 ### Research Outputs
 
@@ -247,6 +287,20 @@ python -m pytest tests/ -q
 ```
 
 The original project's test suite passed all 18 tests in the development environment used for this research.
+
+### 7. Reproduce the KNIME Workflow
+
+The KNIME extension uses the same processed dataset with a smaller set of input features.
+
+Generate the KNIME training and test CSV files:
+
+```bash
+python scripts/prepare_knime_data.py
+```
+
+Then import `knime/Food_Delivery_ETA_Beginner_ML.knwf` into KNIME Analytics Platform.
+
+Follow the [KNIME reproduction guide](knime/README.md) to configure the two CSV Readers and execute the workflow.
 
 ## Limitations
 

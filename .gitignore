@@ -38,3 +38,6 @@ desktop.ini
 
 # NOTE: reports/figures and reports/metrics ARE committed on purpose
 # so the GitHub repo shows results without re-running the pipeline.
+
+# Generated KNIME demo datasets
+/data/knime_demo/
